@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = '/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div>
+    <a href="index.html" class="active"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div>
+    <a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar">
+    <span class="page-title">Dashboard</span>
+    <div class="topbar-right">
+      <span id="month-label" style="font-size:13px;color:#7f8c8d;"></span>
+      <div class="avatar" id="user-avatar">AD</div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="stats-grid" id="stat-cards">
+      <div class="stat-card blue"><div class="label">Total Properties</div><div class="value" id="s-total">—</div></div>
+      <div class="stat-card green"><div class="label">Paid This Month</div><div class="value" id="s-paid">—</div></div>
+      <div class="stat-card red"><div class="label">Unpaid</div><div class="value" id="s-unpaid">—</div></div>
+      <div class="stat-card gold"><div class="label">Collection Rate</div><div class="value" id="s-rate">—</div></div>
+      <div class="stat-card green"><div class="label">Amount Collected</div><div class="value" id="s-collected">—</div><div class="sub" id="s-billed"></div></div>
+      <div class="stat-card red"><div class="label">Outstanding</div><div class="value" id="s-outstanding">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>Account-wise Summary</h3>
+        <div class="filters">
+          <input type="month" id="filter-month">
+          <button class="btn btn-primary btn-sm" onclick="loadDashboard()">Refresh</button>
+          <button class="btn btn-outline btn-sm" onclick="generateBatch()">Generate This Month's Challans</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Account</th><th>Total Challans</th><th>Paid</th><th>Unpaid</th><th>Billed</th><th>Collected</th><th>Collection %</th></tr></thead>
+        <tbody id="account-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Sector-wise Status</h3></div>
+      <table>
+        <thead><tr><th>Sector</th><th>Total</th><th>Paid</th><th>Unpaid</th><th>Collection Rate</th></tr></thead>
+        <tbody id="sector-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Recent Payments</h3><a href="payments.html" class="btn btn-outline btn-sm">View All</a></div>
+      <table>
+        <thead><tr><th>Receipt</th><th>Challan</th><th>Plot</th><th>Account</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead>
+        <tbody id="recent-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  const monthInput = document.getElementById('filter-month');
+  monthInput.value = new Date().toISOString().slice(0,7);
+  document.getElementById('month-label').textContent =
+    new Date().toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
+
+  async function loadDashboard() {
+    const month = monthInput.value;
+    try {
+      const [dash, payments] = await Promise.all([
+        Api.challanDashboard(month),
+        Api.payments({ per_page: 10 }),
+      ]);
+      const d = dash.data;
+      document.getElementById('s-total').textContent     = d.total || 0;
+      document.getElementById('s-paid').textContent      = d.paid  || 0;
+      document.getElementById('s-unpaid').textContent    = d.unpaid || 0;
+      const rate = d.total ? Math.round((d.paid / d.total) * 100) : 0;
+      document.getElementById('s-rate').textContent      = rate + '%';
+      document.getElementById('s-collected').textContent = pkr(d.total_collected);
+      document.getElementById('s-billed').textContent    = 'of PKR ' + pkr(d.total_billed) + ' billed';
+      document.getElementById('s-outstanding').textContent = 'PKR ' + pkr(d.total_billed - d.total_collected);
+
+      document.getElementById('account-tbody').innerHTML = (d.by_account || []).map(a => {
+        const r = a.total ? Math.round((a.paid / a.total) * 100) : 0;
+        return `<tr>
+          <td><strong>${a.name}</strong></td><td>${a.total}</td>
+          <td style="color:var(--success)">${a.paid}</td>
+          <td style="color:var(--danger)">${a.total - a.paid}</td>
+          <td>PKR ${pkr(a.billed)}</td><td>PKR ${pkr(a.collected)}</td>
+          <td><div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-bar" style="width:80px"><div class="progress-bar-fill" style="width:${r}%"></div></div>
+            <span>${r}%</span></div></td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('sector-tbody').innerHTML = (d.by_sector || []).map(s => {
+        const r = s.total ? Math.round((s.paid / s.total) * 100) : 0;
+        return `<tr>
+          <td><strong>Sector ${s.code}</strong></td><td>${s.total}</td>
+          <td style="color:var(--success)">${s.paid}</td>
+          <td style="color:var(--danger)">${s.unpaid}</td>
+          <td><div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-bar" style="width:80px"><div class="progress-bar-fill" style="width:${r}%"></div></div>
+            <span>${r}%</span></div></td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('recent-tbody').innerHTML = (payments.data || []).map(p => `<tr>
+        <td><code>${p.receipt_no || '—'}</code></td>
+        <td>${p.challan_no}</td>
+        <td>${p.sector_code}-${p.plot_no}</td>
+        <td>${p.account_name}</td>
+        <td>PKR ${pkr(p.amount)}</td>
+        <td>${p.payment_method}</td>
+        <td>${fmtDate(p.payment_date)}</td>
+      </tr>`).join('');
+    } catch (err) { toast(err.message || 'Failed to load dashboard.', 'error'); }
+  }
+
+  async function generateBatch() {
+    const month = monthInput.value;
+    if (!confirm(`Generate challans for ${month}? This cannot be undone.`)) return;
+    try {
+      const res = await Api.generateBatch(month);
+      toast(res.message, 'success');
+      loadDashboard();
+    } catch (err) { toast(err.message || 'Generation failed.', 'error'); }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
