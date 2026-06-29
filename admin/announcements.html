@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Announcements — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE='/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html" class="active"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar">
+    <span class="page-title">Announcements</span>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-modal')">+ New Announcement</button>
+      <div class="avatar" id="user-avatar">AD</div>
+    </div>
+  </div>
+  <div id="content">
+    <div id="announcements-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="add-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-header"><h3>New Announcement</h3><button class="modal-close" onclick="closeModal('add-modal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Title *</label><input id="a-title" placeholder="Announcement title"></div>
+      <div class="form-group"><label>Message *</label><textarea id="a-body" rows="5" placeholder="Write your announcement…"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Target Sector (blank = all)</label><select id="a-sector"><option value="">All Residents</option></select></div>
+        <div class="form-group"><label>Expires On</label><input type="date" id="a-expires"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="a-pinned"> Pin this announcement</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submit()">Post & Notify Residents</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  async function initSectors() {
+    const res = await Api.sectors();
+    const el  = document.getElementById('a-sector');
+    res.data.forEach(s => { el.innerHTML += `<option value="${s.id}">Sector ${s.code}</option>`; });
+  }
+  initSectors();
+  async function load() {
+    try {
+      const res  = await Api.get('/announcements');
+      const grid = document.getElementById('announcements-grid');
+      if (!res.data.length) { grid.innerHTML = '<p style="color:#7f8c8d">No announcements yet.</p>'; return; }
+      grid.innerHTML = res.data.map(a => `
+        <div class="card" style="margin:0">
+          <div class="card-body">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <div>
+                ${a.is_pinned ? '<span style="color:#d4ac0d;font-size:12px;font-weight:700">📌 PINNED</span><br>' : ''}
+                <strong style="font-size:15px">${a.title}</strong>
+                ${a.sector_name ? `<span style="font-size:11px;color:#7f8c8d"> — ${a.sector_name}</span>` : '<span style="font-size:11px;color:#7f8c8d"> — All Residents</span>'}
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="del(${a.id})" style="flex-shrink:0">Delete</button>
+            </div>
+            <p style="margin-top:10px;font-size:13px;color:#2c3e50;line-height:1.6">${a.body}</p>
+            <div style="margin-top:12px;font-size:11px;color:#aaa">Posted by ${a.posted_by} · ${fmtDate(a.created_at)}${a.expires_at ? ` · Expires ${fmtDate(a.expires_at)}` : ''}</div>
+          </div>
+        </div>`).join('');
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function submit() {
+    const title = document.getElementById('a-title').value.trim();
+    const body  = document.getElementById('a-body').value.trim();
+    if (!title || !body) { toast('Title and message are required.', 'error'); return; }
+    try {
+      await Api.post('/announcements', { title, body, sector_id: document.getElementById('a-sector').value || null, is_pinned: document.getElementById('a-pinned').checked ? 1 : 0, expires_at: document.getElementById('a-expires').value || null });
+      toast('Announcement posted and residents notified!', 'success');
+      closeModal('add-modal');
+      document.getElementById('a-title').value = '';
+      document.getElementById('a-body').value  = '';
+      load();
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function del(id) {
+    if (!confirm('Delete this announcement?')) return;
+    await Api.delete('/announcements/' + id);
+    toast('Deleted.', 'success'); load();
+  }
+  load();
+</script>
+</body></html>

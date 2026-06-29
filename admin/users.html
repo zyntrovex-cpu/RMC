@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Users — PNWHS RMC</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<script>window.API_BASE='/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html" class="active"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">User Management</span>
+    <div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add User</button><div class="avatar" id="user-avatar">AD</div></div>
+  </div>
+  <div id="content">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body">
+        <div class="filters">
+          <select id="filterRole" onchange="load()">
+            <option value="">All Roles</option><option value="super_admin">Super Admin</option>
+            <option value="rmc_admin">RMC Admin</option><option value="data_entry">Data Entry</option>
+            <option value="owner">Owner</option><option value="tenant">Tenant</option>
+          </select>
+          <select id="filterStatus" onchange="load()">
+            <option value="">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option>
+          </select>
+          <input type="text" id="searchQ" placeholder="Name, mobile, CNIC…" oninput="debounceLoad()" style="flex:1">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>System Users</h3></div>
+      <table>
+        <thead><tr><th>Name</th><th>Mobile</th><th>CNIC</th><th>Role</th><th>Property</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Loading…</td></tr></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="userModal" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3 id="modalTitle">Add User</h3><button class="modal-close" onclick="closeModal('userModal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="userId">
+      <div class="form-group"><label>Full Name *</label><input type="text" id="uName"></div>
+      <div class="form-group"><label>Mobile *</label><input type="text" id="uMobile"></div>
+      <div class="form-group"><label>CNIC (13 digits) *</label><input type="text" id="uCnic" maxlength="13"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="uEmail"></div>
+      <div class="form-group"><label>Role *</label>
+        <select id="uRole">
+          <option value="super_admin">Super Admin</option><option value="rmc_admin">RMC Admin</option>
+          <option value="data_entry">Data Entry</option><option value="owner">Owner</option><option value="tenant">Tenant</option>
+        </select>
+      </div>
+      <div class="form-group" id="pwGroup"><label>Password *</label><input type="password" id="uPassword" placeholder="Min 8 characters"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="uStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let currentPage=1,dTimer;
+  const roleColors={super_admin:'badge-danger',rmc_admin:'badge-warning',data_entry:'badge-info',owner:'badge-success',tenant:'badge-secondary'};
+  function debounceLoad(){clearTimeout(dTimer);dTimer=setTimeout(()=>{currentPage=1;load();},400);}
+  async function load(){
+    const role=document.getElementById('filterRole').value;
+    const status=document.getElementById('filterStatus').value;
+    const q=document.getElementById('searchQ').value;
+    try{
+      const res=await Api.getUsers({role,status,q,page:currentPage,per_page:25});
+      document.getElementById('tbody').innerHTML=(res.data||[]).map(u=>`<tr>
+        <td><strong>${u.full_name||u.name||''}</strong></td>
+        <td>${u.mobile||''}</td><td style="font-size:11px">${u.cnic||'—'}</td>
+        <td><span class="badge ${roleColors[u.role]||'badge-secondary'}">${u.role}</span></td>
+        <td>${u.plot_no?`Plot ${u.plot_no} — ${u.sector_name}`:'—'}</td>
+        <td><span class="badge ${u.status==='active'?'badge-success':'badge-secondary'}">${u.status}</span></td>
+        <td>
+          <button class="btn btn-sm btn-outline" onclick='editUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Edit</button>
+          <button class="btn btn-sm btn-outline" onclick="resetPwd(${u.id})">Reset Pwd</button>
+        </td>
+      </tr>`).join('')||(('<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No users found</td></tr>'));
+      renderPagination('pagination',res.meta,p=>{currentPage=p;load();});
+    }catch(err){toast(err.message||'Failed.','error');}
+  }
+  function openAddModal(){
+    document.getElementById('modalTitle').textContent='Add User';
+    document.getElementById('userId').value='';
+    ['uName','uMobile','uCnic','uEmail','uPassword'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('uRole').value='rmc_admin';
+    document.getElementById('uStatus').value='active';
+    document.getElementById('pwGroup').style.display='';
+    openModal('userModal');
+  }
+  function editUser(u){
+    document.getElementById('modalTitle').textContent='Edit User';
+    document.getElementById('userId').value=u.id;
+    document.getElementById('uName').value=u.full_name||u.name||'';
+    document.getElementById('uMobile').value=u.mobile||'';
+    document.getElementById('uCnic').value=u.cnic||'';
+    document.getElementById('uEmail').value=u.email||'';
+    document.getElementById('uRole').value=u.role||'rmc_admin';
+    document.getElementById('uStatus').value=u.status||'active';
+    document.getElementById('uPassword').value='';
+    document.getElementById('pwGroup').style.display='none';
+    openModal('userModal');
+  }
+  async function saveUser(){
+    const id=document.getElementById('userId').value;
+    const body={name:document.getElementById('uName').value.trim(),mobile:document.getElementById('uMobile').value.trim(),cnic:document.getElementById('uCnic').value.trim(),email:document.getElementById('uEmail').value.trim(),role:document.getElementById('uRole').value,status:document.getElementById('uStatus').value};
+    if(!id)body.password=document.getElementById('uPassword').value;
+    try{
+      id?await Api.updateUser(id,body):await Api.createUser(body);
+      closeModal('userModal');toast(id?'User updated':'User created','success');load();
+    }catch(err){toast(err.message||'Failed.','error');}
+  }
+  async function resetPwd(id){
+    const pwd=prompt('Enter new password (min 8 chars):');
+    if(!pwd||pwd.length<8)return;
+    try{await Api.resetPassword(id,{new_password:pwd});toast('Password reset successfully','success');}
+    catch(err){toast(err.message||'Failed.','error');}
+  }
+  load();
+</script>
+</body></html>

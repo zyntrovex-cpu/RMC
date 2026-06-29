@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Payments — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE='/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html" class="active"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">Payment Ledger</span>
+    <div class="topbar-right"><div class="avatar" id="user-avatar">AD</div></div>
+  </div>
+  <div id="content">
+    <div class="stats-grid" style="margin-bottom:16px">
+      <div class="stat-card"><div class="label">Total Collected</div><div class="value" id="statTotal">PKR 0</div></div>
+      <div class="stat-card"><div class="label" style="color:#27AE60">Cash</div><div class="value" style="color:#27AE60" id="statCash">PKR 0</div></div>
+      <div class="stat-card"><div class="label" style="color:#2980B9">Online / IBFT</div><div class="value" style="color:#2980B9" id="statOnline">PKR 0</div></div>
+      <div class="stat-card"><div class="label">Transactions</div><div class="value" id="statCount">0</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body">
+        <div class="filters">
+          <input type="month" id="filterMonth" onchange="load()">
+          <select id="filterMethod" onchange="load()">
+            <option value="">All Methods</option>
+            <option value="cash">Cash</option>
+            <option value="cheque">Cheque</option>
+            <option value="ibft">IBFT / Bank Transfer</option>
+            <option value="online">Online Gateway</option>
+          </select>
+          <input type="text" id="searchQ" placeholder="Search by name, receipt, challan…" oninput="debounceLoad()" style="flex:1">
+          <button class="btn btn-outline" onclick="exportCSV()">⬇ Export</button>
+          <button class="btn btn-primary" onclick="openModal('manualModal')">+ Record Payment</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Payment Records</h3></div>
+      <table>
+        <thead><tr><th>Receipt No</th><th>Resident / Property</th><th>Challan</th><th>Amount</th><th>Method</th><th>Recorded By</th><th>Date</th></tr></thead>
+        <tbody id="payTable"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Loading…</td></tr></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="manualModal" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3>Record Manual Payment</h3><button class="modal-close" onclick="closeModal('manualModal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Challan Number *</label>
+        <input type="text" id="challanNo" placeholder="PNWHS-2025-01-MAINT-00001" oninput="lookupChallan()">
+        <div id="challanInfo" style="margin-top:8px;padding:10px;background:#f4f6f8;border-radius:6px;display:none;font-size:13px"></div>
+      </div>
+      <div class="form-group"><label>Amount Paid *</label><input type="number" id="amountPaid" min="1"></div>
+      <div class="form-group"><label>Payment Method *</label>
+        <select id="payMethod"><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="ibft">IBFT / Bank Transfer</option></select>
+      </div>
+      <div class="form-group"><label>Reference / Cheque No</label><input type="text" id="payRef" placeholder="Optional"></div>
+      <div class="form-group"><label>Notes</label><textarea id="payNotes" rows="2" placeholder="Optional notes…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('manualModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let currentPage=1, lookupTimer, dTimer;
+  document.getElementById('filterMonth').value = new Date().toISOString().substring(0,7);
+  function debounceLoad(){clearTimeout(dTimer);dTimer=setTimeout(()=>{currentPage=1;load();},400);}
+  async function load(){
+    const month=document.getElementById('filterMonth').value;
+    const method=document.getElementById('filterMethod').value;
+    const q=document.getElementById('searchQ').value;
+    const data=await Api.getPayments({month,method,q,page:currentPage});
+    if(!data)return;
+    const items=data.data||[], meta=data.meta||{}, s=data.summary||{};
+    document.getElementById('statTotal').textContent='PKR '+pkr(s.total||0);
+    document.getElementById('statCash').textContent='PKR '+pkr(s.cash||0);
+    document.getElementById('statOnline').textContent='PKR '+pkr(s.online||0);
+    document.getElementById('statCount').textContent=s.count||0;
+    document.getElementById('payTable').innerHTML=items.length?items.map(p=>`
+      <tr>
+        <td><strong>${p.receipt_no||'—'}</strong></td>
+        <td><strong>${p.user_name||'—'}</strong><br><small style="color:#aaa">Plot ${p.plot_no} — ${p.sector_name}</small></td>
+        <td><small>${p.challan_no||''}</small><br><small style="color:#aaa">${p.account_name||''}</small></td>
+        <td><strong>PKR ${pkr(p.amount_paid)}</strong></td>
+        <td><span class="badge badge-info">${p.payment_method||''}</span></td>
+        <td>${p.recorded_by||'System'}</td>
+        <td>${fmtDate(p.paid_at)}</td>
+      </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No payment records</td></tr>';
+    renderPagination('pagination',meta,p=>{currentPage=p;load();});
+  }
+  function lookupChallan(){
+    clearTimeout(lookupTimer);
+    const no=document.getElementById('challanNo').value.trim();
+    if(no.length<5){document.getElementById('challanInfo').style.display='none';return;}
+    lookupTimer=setTimeout(async()=>{
+      const data=await Api.getChallanByNo(no);
+      const el=document.getElementById('challanInfo');
+      if(data?.data){const c=data.data;el.style.display='block';el.innerHTML=`<b>${c.account_name}</b> — Plot ${c.plot_no} (${c.sector_name})<br>Net Amount: <b>PKR ${pkr(c.net_amount)}</b> | Status: <b>${c.status}</b>`;document.getElementById('amountPaid').value=c.net_amount;}
+      else{el.style.display='block';el.innerHTML='❌ Challan not found';}
+    },500);
+  }
+  async function savePayment(){
+    const challanNo=document.getElementById('challanNo').value.trim();
+    const amount=document.getElementById('amountPaid').value;
+    const method=document.getElementById('payMethod').value;
+    const ref=document.getElementById('payRef').value.trim();
+    const notes=document.getElementById('payNotes').value.trim();
+    if(!challanNo||!amount){toast('Challan number and amount are required','error');return;}
+    const ok=await Api.recordPayment({challan_no:challanNo,amount_paid:amount,payment_method:method,reference_no:ref,notes});
+    if(ok){closeModal('manualModal');toast('Payment recorded','success');load();}
+  }
+  function exportCSV(){
+    const month=document.getElementById('filterMonth').value;
+    const method=document.getElementById('filterMethod').value;
+    window.open(`${Api.base}/payments?action=export&month=${month}&method=${method}&token=${localStorage.getItem('rmc_token')}`);
+  }
+  load();
+</script>
+</body></html>
