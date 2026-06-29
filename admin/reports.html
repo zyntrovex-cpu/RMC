@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = '/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html" class="active"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">Reports & Analytics</span><div class="topbar-right"><div class="avatar" id="user-avatar">AD</div></div></div>
+  <div id="content">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px">
+      <div class="card"><div class="card-header"><h3>📅 Monthly Collection</h3></div><div class="card-body"><div class="form-group"><label>Month</label><input type="month" id="r-monthly-month"></div><button class="btn btn-primary" onclick="loadMonthly()">Generate</button></div></div>
+      <div class="card"><div class="card-header"><h3>🗺️ Sector-wise Report</h3></div><div class="card-body"><div class="form-group"><label>Month</label><input type="month" id="r-sector-month"></div><button class="btn btn-primary" onclick="loadSector()">Generate</button></div></div>
+      <div class="card"><div class="card-header"><h3>🏠 House-wise History</h3></div><div class="card-body"><div class="form-group"><label>Property ID</label><input type="number" id="r-house-id" placeholder="Enter property ID"></div><button class="btn btn-primary" onclick="loadHouse()">Generate</button></div></div>
+      <div class="card"><div class="card-header"><h3>📆 Annual Summary</h3></div><div class="card-body"><div class="form-group"><label>Year</label><input type="number" id="r-year" value="2026"></div><button class="btn btn-primary" onclick="loadAnnual()">Generate</button></div></div>
+      <div class="card"><div class="card-header"><h3>⚠️ Defaulters Report</h3></div><div class="card-body"><p style="font-size:13px;color:#7f8c8d;margin-bottom:12px">All properties with outstanding dues.</p><button class="btn btn-danger" onclick="loadDefaulters()">Generate</button></div></div>
+      <div class="card"><div class="card-header"><h3>🏦 Arrears Report</h3></div><div class="card-body"><p style="font-size:13px;color:#7f8c8d;margin-bottom:12px">Accumulated arrears per account.</p><button class="btn btn-primary" onclick="loadArrears()">Generate</button></div></div>
+    </div>
+    <div class="card" id="output-card" style="display:none">
+      <div class="card-header"><h3 id="output-title">Report</h3><button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button></div>
+      <div style="overflow-x:auto"><table id="output-table"><thead id="output-head"></thead><tbody id="output-body"></tbody></table></div>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  const now = new Date().toISOString().slice(0,7);
+  document.getElementById('r-monthly-month').value = now;
+  document.getElementById('r-sector-month').value  = now;
+  let currentData = [];
+  function showTable(title, headers, rows) {
+    document.getElementById('output-title').textContent = title;
+    document.getElementById('output-head').innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+    document.getElementById('output-body').innerHTML = rows;
+    document.getElementById('output-card').style.display = 'block';
+    document.getElementById('output-card').scrollIntoView({ behavior:'smooth' });
+  }
+  async function loadMonthly() {
+    const month = document.getElementById('r-monthly-month').value;
+    try {
+      const res = await Api.reportMonthly(month);
+      currentData = res.data.rows;
+      const rows = currentData.map(r => `<tr><td>${r.sector}</td><td>${r.plot_no}</td><td>${r.owner||'—'}</td><td>${r.account}</td><td>${r.challan_no}</td><td>PKR ${pkr(r.total_amount)}</td><td>${statusBadge(r.status)}</td><td>PKR ${pkr(r.paid_amount)}</td><td>${r.payment_method||'—'}</td><td>${fmtDate(r.payment_date)}</td></tr>`).join('');
+      showTable(`Monthly Collection — ${month}`,['Sector','Plot','Owner','Account','Challan','Total','Status','Paid','Method','Date'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function loadSector() {
+    const month = document.getElementById('r-sector-month').value;
+    try {
+      const res = await Api.reportSector(month);
+      currentData = res.data.rows;
+      const rows = currentData.map(r => `<tr><td><strong>Sector ${r.code}</strong></td><td>${r.name}</td><td>${r.total_properties}</td><td>${r.total_challans}</td><td>PKR ${pkr(r.total_billed)}</td><td>PKR ${pkr(r.collected)}</td><td style="color:var(--danger)">PKR ${pkr(r.outstanding)}</td><td style="color:var(--success)">${r.paid_count}</td><td style="color:var(--danger)">${r.unpaid_count}</td></tr>`).join('');
+      showTable(`Sector-wise — ${month}`,['Code','Sector','Properties','Challans','Billed','Collected','Outstanding','Paid','Unpaid'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function loadHouse() {
+    const id = document.getElementById('r-house-id').value;
+    if (!id) { toast('Enter a property ID.', 'error'); return; }
+    try {
+      const res = await Api.reportHouse(id);
+      currentData = res.data;
+      const rows = currentData.map(r => `<tr><td>${r.month}</td><td>${r.account}</td><td>${r.challan_no}</td><td>PKR ${pkr(r.amount)}</td><td style="color:var(--danger)">PKR ${pkr(r.arrears)}</td><td>PKR ${pkr(r.total_amount)}</td><td>${statusBadge(r.status)}</td><td>PKR ${pkr(r.paid_amount)}</td><td>${r.payment_method||'—'}</td><td>${fmtDate(r.payment_date)}</td></tr>`).join('');
+      showTable(`House-wise History — Property #${id}`,['Month','Account','Challan','Amount','Arrears','Total','Status','Paid','Method','Date'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function loadAnnual() {
+    const year = document.getElementById('r-year').value;
+    try {
+      const res = await Api.reportAnnual(year);
+      currentData = res.data.rows;
+      const rows = currentData.map(r => `<tr><td>${r.month}</td><td>${r.account}</td><td>${r.total_challans}</td><td>${r.paid_count}</td><td>PKR ${pkr(r.billed)}</td><td>PKR ${pkr(r.collected)}</td><td style="color:var(--danger)">PKR ${pkr(r.outstanding)}</td></tr>`).join('');
+      showTable(`Annual Summary — ${year}`,['Month','Account','Challans','Paid','Billed','Collected','Outstanding'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function loadDefaulters() {
+    try {
+      const res = await Api.reportDefaulters();
+      currentData = res.data;
+      const rows = currentData.map((r,i) => `<tr><td>${i+1}</td><td>S-${r.sector}</td><td>${r.plot_no}</td><td>${r.owner||'—'}</td><td>${r.mobile||'—'}</td><td>${r.unpaid_challans}</td><td>${r.accounts_due||'—'}</td><td style="color:var(--danger);font-weight:700">PKR ${pkr(r.total_outstanding)}</td></tr>`).join('');
+      showTable('Defaulters Report',['#','Sector','Plot','Owner','Mobile','Unpaid Challans','Accounts Due','Outstanding'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function loadArrears() {
+    try {
+      const res = await Api.reportArrears();
+      currentData = res.data;
+      const rows = currentData.map(r => `<tr><td>${r.account}</td><td>${r.properties_with_arrears}</td><td style="color:var(--danger);font-weight:700">PKR ${pkr(r.total_arrears)}</td></tr>`).join('');
+      showTable('Arrears Report by Account',['Account','Properties with Arrears','Total Arrears'],rows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  function exportCSV() {
+    const rows = document.querySelectorAll('#output-table tr');
+    const csv = Array.from(rows).map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.innerText.replace(/"/g,'""') + '"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'pnwhs-report-' + Date.now() + '.csv';
+    a.click();
+  }
+</script>
+</body></html>

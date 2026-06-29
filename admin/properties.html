@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Properties — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = '/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html" class="active"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar">
+    <span class="page-title">Property Registry</span>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-modal')">+ Add Property</button>
+      <div class="avatar" id="user-avatar">AD</div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="card">
+      <div class="card-header">
+        <h3>All Properties</h3>
+        <div class="filters">
+          <select id="f-sector"></select>
+          <select id="f-occupancy">
+            <option value="">All Occupancy</option>
+            <option value="owner_occupied">Owner Occupied</option>
+            <option value="rented">Rented</option>
+            <option value="vacant">Vacant</option>
+            <option value="exempt">Exempt</option>
+          </select>
+          <select id="f-type">
+            <option value="">All Types</option>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+          </select>
+          <input type="text" id="f-search" placeholder="Plot no / owner name…">
+          <button class="btn btn-primary btn-sm" onclick="load(1)">Search</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Sector</th><th>Plot No.</th><th>Old No.</th><th>Category</th><th>Type</th><th>Occupancy</th><th>Owner</th><th>Outstanding</th><th>Action</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+<!-- Add Property Modal -->
+<div class="modal-overlay" id="add-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-header"><h3>Add Property</h3><button class="modal-close" onclick="closeModal('add-modal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Sector *</label><select id="add-sector"></select></div>
+        <div class="form-group"><label>Street</label><select id="add-street"><option value="">Select sector first</option></select></div>
+        <div class="form-group"><label>Plot No. *</label><input id="add-plot" placeholder="e.g. 42"></div>
+        <div class="form-group"><label>Old Plot No.</label><input id="add-old-plot"></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="add-category">
+            <option value="1">A — 240 Sq Yds</option>
+            <option value="2">B — 180 Sq Yds</option>
+            <option value="3">C — 120 Sq Yds</option>
+            <option value="4">Commercial</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Property Type</label>
+          <select id="add-type">
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="plot">Plot (vacant)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Occupancy</label>
+          <select id="add-occupancy">
+            <option value="vacant">Vacant</option>
+            <option value="owner_occupied">Owner Occupied</option>
+            <option value="rented">Rented</option>
+            <option value="exempt">Exempt</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Facility Type</label>
+          <select id="add-facility">
+            <option value="none">None (billable)</option>
+            <option value="mosque">Mosque</option>
+            <option value="park">Park</option>
+            <option value="community">Community Hall</option>
+            <option value="utility">Utility</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <label><input type="checkbox" id="add-corner"> Corner Plot</label>
+        <label><input type="checkbox" id="add-canal"> Canal Facing</label>
+      </div>
+      <div class="form-group" style="margin-top:12px"><label>Remarks</label><textarea id="add-remarks" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAdd()">Save Property</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let sectors = [];
+  async function initFilters() {
+    const res = await Api.sectors();
+    sectors = res.data;
+    const opts = '<option value="">All Sectors</option>' + sectors.map(s => `<option value="${s.id}">Sector ${s.code}</option>`).join('');
+    document.getElementById('f-sector').innerHTML = opts;
+    const addOpts = '<option value="">— Select —</option>' + sectors.map(s => `<option value="${s.id}">Sector ${s.code}</option>`).join('');
+    document.getElementById('add-sector').innerHTML = addOpts;
+    document.getElementById('add-sector').addEventListener('change', async (e) => {
+      if (!e.target.value) return;
+      const sRes = await Api.sectorStreets(e.target.value);
+      document.getElementById('add-street').innerHTML = '<option value="">— Select Street —</option>' +
+        sRes.data.map(st => `<option value="${st.id}">Street ${st.street_no}</option>`).join('');
+    });
+  }
+  initFilters();
+  async function load(page = 1) {
+    const params = { page, per_page: 25, sector_id: document.getElementById('f-sector').value,
+      occupancy: document.getElementById('f-occupancy').value,
+      property_type: document.getElementById('f-type').value,
+      search: document.getElementById('f-search').value };
+    try {
+      const res = await Api.properties(params);
+      document.getElementById('tbody').innerHTML = res.data.map(p => {
+        const outstanding = (p.outstanding_dues || []).reduce((sum, d) => sum + parseFloat(d.outstanding || 0), 0);
+        return `<tr>
+          <td><strong>S-${p.sector_code}</strong></td><td><strong>${p.plot_no}</strong></td>
+          <td style="color:#aaa;font-size:12px">${p.old_plot_no || '—'}</td><td>${p.category_code || '—'}</td>
+          <td>${p.property_type}</td>
+          <td>${statusBadge(p.occupancy === 'owner_occupied' ? 'active' : p.occupancy)}</td>
+          <td>${p.owner_name || '<em style="color:#aaa">None</em>'}</td>
+          <td style="color:${outstanding > 0 ? 'var(--danger)' : 'var(--success)'}">${outstanding > 0 ? 'PKR ' + pkr(outstanding) : 'Clear'}</td>
+          <td><a href="property-detail.html?id=${p.id}" class="btn btn-outline btn-sm">View</a></td>
+        </tr>`;
+      }).join('');
+      renderPagination('pagination', res.meta, load);
+    } catch (err) { toast(err.message || 'Failed to load.', 'error'); }
+  }
+  async function submitAdd() {
+    try {
+      await Api.createProperty({
+        sector_id: document.getElementById('add-sector').value,
+        street_id: document.getElementById('add-street').value || null,
+        plot_no: document.getElementById('add-plot').value,
+        old_plot_no: document.getElementById('add-old-plot').value,
+        category_id: document.getElementById('add-category').value,
+        property_type: document.getElementById('add-type').value,
+        occupancy: document.getElementById('add-occupancy').value,
+        facility_type: document.getElementById('add-facility').value,
+        is_corner: document.getElementById('add-corner').checked ? 1 : 0,
+        is_canal_facing: document.getElementById('add-canal').checked ? 1 : 0,
+        remarks: document.getElementById('add-remarks').value,
+      });
+      toast('Property added successfully.', 'success');
+      closeModal('add-modal');
+      load();
+    } catch (err) { toast(err.message || 'Failed to add property.', 'error'); }
+  }
+  load();
+</script>
+</body></html>

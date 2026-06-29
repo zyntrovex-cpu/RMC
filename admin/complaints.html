@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaints — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = '/api';</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html" class="active"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">Complaints & Maintenance</span><div class="topbar-right"><div class="avatar" id="user-avatar">AD</div></div></div>
+  <div id="content">
+    <div class="stats-grid">
+      <div class="stat-card red"><div class="label">Open</div><div class="value" id="s-open">—</div></div>
+      <div class="stat-card gold"><div class="label">In Progress</div><div class="value" id="s-progress">—</div></div>
+      <div class="stat-card green"><div class="label">Resolved</div><div class="value" id="s-resolved">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>All Complaints</h3>
+        <div class="filters">
+          <select id="f-status" onchange="load(1)"><option value="">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select>
+          <select id="f-type" onchange="load(1)"><option value="">All Types</option><option value="maintenance">Maintenance</option><option value="water">Water</option><option value="security">Security</option><option value="electricity">Electricity</option><option value="cleanliness">Cleanliness</option><option value="noise">Noise</option><option value="other">Other</option></select>
+          <select id="f-priority" onchange="load(1)"><option value="">All Priority</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Plot</th><th>Type</th><th>Title</th><th>Priority</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="detail-modal" style="display:none">
+  <div class="modal" style="width:640px">
+    <div class="modal-header"><h3 id="modal-title">Complaint Detail</h3><button class="modal-close" onclick="closeModal('detail-modal')">&#x2715;</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <select id="m-status"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select>
+      <input id="m-comment" placeholder="Add comment / resolution note…" style="flex:1;padding:7px 10px;border:1px solid #dce3eb;border-radius:6px;">
+      <button class="btn btn-primary" onclick="updateComplaint()">Update</button>
+      <button class="btn btn-outline" onclick="closeModal('detail-modal')">Close</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let currentId = null;
+  const priorityColor = { urgent:'var(--danger)', high:'#e67e22', medium:'var(--warning)', low:'var(--success)' };
+  const typeIcon = { maintenance:'🔧', water:'💧', security:'🔒', electricity:'⚡', cleanliness:'🧹', noise:'📢', other:'📌' };
+  async function loadStats() {
+    try {
+      const [open, prog, res] = await Promise.all([
+        Api.get('/complaints?status=open&per_page=1'),
+        Api.get('/complaints?status=in_progress&per_page=1'),
+        Api.get('/complaints?status=resolved&per_page=1'),
+      ]);
+      document.getElementById('s-open').textContent     = open.meta.total;
+      document.getElementById('s-progress').textContent = prog.meta.total;
+      document.getElementById('s-resolved').textContent = res.meta.total;
+    } catch {}
+  }
+  async function load(page = 1) {
+    const params = { page, per_page: 20, status: document.getElementById('f-status').value, type: document.getElementById('f-type').value, priority: document.getElementById('f-priority').value };
+    try {
+      const res = await Api.get('/complaints?' + new URLSearchParams(params));
+      document.getElementById('tbody').innerHTML = res.data.map(c => `<tr>
+        <td>${c.id}</td><td><strong>S-${c.sector_code}</strong>/${c.plot_no}</td>
+        <td>${typeIcon[c.type]||'📌'} ${c.type}</td><td>${c.title}</td>
+        <td><span style="color:${priorityColor[c.priority]};font-weight:700">${c.priority.toUpperCase()}</span></td>
+        <td>${statusBadge(c.status)}</td><td>${fmtDate(c.created_at)}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="openDetail(${c.id})">View</button></td>
+      </tr>`).join('');
+      renderPagination('pagination', res.meta, load);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function openDetail(id) {
+    currentId = id;
+    try {
+      const res = await Api.get('/complaints/' + id);
+      const c = res.data;
+      document.getElementById('modal-title').textContent = `#${c.id} — ${c.title}`;
+      document.getElementById('m-status').value = c.status;
+      document.getElementById('modal-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div><label style="font-size:11px;color:#7f8c8d">PLOT</label><div><strong>S-${c.sector_code}/${c.plot_no}</strong></div></div>
+          <div><label style="font-size:11px;color:#7f8c8d">SUBMITTED BY</label><div>${c.submitted_by}</div></div>
+          <div><label style="font-size:11px;color:#7f8c8d">TYPE</label><div>${typeIcon[c.type]} ${c.type}</div></div>
+          <div><label style="font-size:11px;color:#7f8c8d">PRIORITY</label><div style="color:${priorityColor[c.priority]};font-weight:700">${c.priority.toUpperCase()}</div></div>
+        </div>
+        <div style="background:#f4f6f8;padding:12px;border-radius:6px;margin-bottom:16px;font-size:13px">${c.description}</div>
+        <div style="font-size:12px;font-weight:700;color:#7f8c8d;margin-bottom:8px">COMMENTS</div>
+        <div style="max-height:200px;overflow-y:auto">
+          ${(c.comments||[]).map(cm => `<div style="padding:8px;border-left:3px solid ${cm.is_internal?'#e67e22':'#2e86c1'};margin-bottom:8px;font-size:13px"><strong>${cm.full_name}</strong> <span style="color:#aaa;font-size:11px">${fmtDate(cm.created_at)}</span>${cm.is_internal?'<span style="color:#e67e22;font-size:10px;font-weight:700"> [INTERNAL]</span>':''}<div>${cm.comment}</div></div>`).join('') || '<em style="color:#aaa">No comments yet.</em>'}
+        </div>`;
+      openModal('detail-modal');
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  async function updateComplaint() {
+    try {
+      await Api.put('/complaints/' + currentId, { status: document.getElementById('m-status').value, comment: document.getElementById('m-comment').value });
+      toast('Complaint updated.', 'success');
+      document.getElementById('m-comment').value = '';
+      closeModal('detail-modal');
+      load(); loadStats();
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  loadStats(); load();
+</script>
+</body></html>
