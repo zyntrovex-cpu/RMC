@@ -72,13 +72,15 @@ CREATE TABLE properties (
     is_corner       TINYINT(1) DEFAULT 0,
     is_canal_facing TINYINT(1) DEFAULT 0,
     is_active       TINYINT(1) DEFAULT 1,
-    facility_type   ENUM('none','mosque','park','community','utility') DEFAULT 'none',
-    remarks         TEXT,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (sector_id)   REFERENCES sectors(id),
-    FOREIGN KEY (street_id)   REFERENCES streets(id),
-    FOREIGN KEY (category_id) REFERENCES property_categories(id),
+    facility_type       ENUM('none','mosque','park','community','utility') DEFAULT 'none',
+    registered_user_id  INT UNSIGNED,
+    remarks             TEXT,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (sector_id)          REFERENCES sectors(id),
+    FOREIGN KEY (street_id)          REFERENCES streets(id),
+    FOREIGN KEY (category_id)        REFERENCES property_categories(id),
+    FOREIGN KEY (registered_user_id) REFERENCES users(id),
     UNIQUE KEY uq_sector_plot (sector_id, plot_no)
 );
 
