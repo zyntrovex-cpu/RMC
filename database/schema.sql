@@ -77,10 +77,9 @@ CREATE TABLE properties (
     remarks             TEXT,
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (sector_id)          REFERENCES sectors(id),
-    FOREIGN KEY (street_id)          REFERENCES streets(id),
-    FOREIGN KEY (category_id)        REFERENCES property_categories(id),
-    FOREIGN KEY (registered_user_id) REFERENCES users(id),
+    FOREIGN KEY (sector_id)   REFERENCES sectors(id),
+    FOREIGN KEY (street_id)   REFERENCES streets(id),
+    FOREIGN KEY (category_id) REFERENCES property_categories(id),
     UNIQUE KEY uq_sector_plot (sector_id, plot_no)
 );
 
@@ -108,6 +107,10 @@ CREATE TABLE users (
 INSERT INTO users (full_name, cnic, mobile, email, password_hash, role, status) VALUES
     ('RMC Super Admin', NULL, 'admin', 'admin@pnwhs-rmc.com',
      '$2y$12$0eR2O22k2sWk4srYhI0gHugGQD2mm4C3muXjSvh3OOJt86F7fDTe2', 'super_admin', 'active');
+
+-- Add FK now that users table exists
+ALTER TABLE properties
+    ADD CONSTRAINT fk_properties_user FOREIGN KEY (registered_user_id) REFERENCES users(id);
 
 -- ------------------------------------------------------------
 -- OWNERS
