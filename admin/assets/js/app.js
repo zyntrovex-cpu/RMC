@@ -44,6 +44,7 @@ const App = {
 
   // ── Sidebar slide toggle ──────────────────────────────────────
   initSidebar() {
+    try {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
@@ -88,6 +89,7 @@ const App = {
     if (localStorage.getItem('rmc_sidebar') === 'collapsed') {
       document.body.classList.add('sidebar-collapsed');
     }
+    } catch (e) { console.warn('Sidebar init error:', e); }
   },
 
   toggleSidebar() {

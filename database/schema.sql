@@ -332,4 +332,126 @@ INSERT INTO settings (`key`, `value`, `label`) VALUES
     ('currency',            'PKR',                   'Currency'),
     ('fiscal_year_start',   '07',                    'Fiscal Year Start Month');
 
+-- ------------------------------------------------------------
+-- COMPLAINTS
+-- ------------------------------------------------------------
+CREATE TABLE complaints (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    property_id     INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    type            ENUM('maintenance','water','security','electricity','cleanliness','noise','other') NOT NULL,
+    title           VARCHAR(200) NOT NULL,
+    description     TEXT NOT NULL,
+    priority        ENUM('urgent','high','medium','low') DEFAULT 'medium',
+    status          ENUM('open','in_progress','resolved','closed') DEFAULT 'open',
+    assigned_to     INT UNSIGNED,
+    resolution_note TEXT,
+    resolved_at     TIMESTAMP NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id) REFERENCES properties(id),
+    FOREIGN KEY (user_id)     REFERENCES users(id),
+    FOREIGN KEY (assigned_to) REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- COMPLAINT COMMENTS
+-- ------------------------------------------------------------
+CREATE TABLE complaint_comments (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    complaint_id    INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    comment         TEXT NOT NULL,
+    is_internal     TINYINT(1) DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (complaint_id) REFERENCES complaints(id),
+    FOREIGN KEY (user_id)      REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- ANNOUNCEMENTS
+-- ------------------------------------------------------------
+CREATE TABLE announcements (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    body        TEXT NOT NULL,
+    sector_id   INT UNSIGNED,
+    is_pinned   TINYINT(1) DEFAULT 0,
+    push_sent   TINYINT(1) DEFAULT 0,
+    expires_at  DATE,
+    created_by  INT UNSIGNED NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sector_id)  REFERENCES sectors(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- NOC REQUESTS
+-- ------------------------------------------------------------
+CREATE TABLE noc_requests (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    property_id     INT UNSIGNED NOT NULL,
+    owner_id        INT UNSIGNED NOT NULL,
+    purpose         ENUM('sale','bank','general','transfer') NOT NULL,
+    status          ENUM('pending','approved','rejected') DEFAULT 'pending',
+    noc_number      VARCHAR(50),
+    reviewed_by     INT UNSIGNED,
+    review_note     TEXT,
+    issued_at       TIMESTAMP NULL,
+    expires_at      DATE,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id) REFERENCES properties(id),
+    FOREIGN KEY (owner_id)    REFERENCES owners(id),
+    FOREIGN KEY (reviewed_by) REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- VISITOR PASSES
+-- ------------------------------------------------------------
+CREATE TABLE visitor_passes (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    property_id     INT UNSIGNED NOT NULL,
+    registered_by   INT UNSIGNED NOT NULL,
+    visitor_name    VARCHAR(150) NOT NULL,
+    visitor_cnic    VARCHAR(15),
+    visitor_mobile  VARCHAR(20),
+    vehicle_no      VARCHAR(30),
+    purpose         VARCHAR(200),
+    visit_date      DATE NOT NULL,
+    valid_from      DATETIME NOT NULL,
+    valid_until     DATETIME NOT NULL,
+    pass_code       VARCHAR(10) NOT NULL,
+    status          ENUM('active','used','expired','cancelled') DEFAULT 'active',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id)   REFERENCES properties(id),
+    FOREIGN KEY (registered_by) REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- OTP VERIFICATIONS
+-- ------------------------------------------------------------
+CREATE TABLE otp_verifications (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT UNSIGNED NOT NULL,
+    otp         VARCHAR(6) NOT NULL,
+    purpose     ENUM('login','reset') DEFAULT 'login',
+    expires_at  TIMESTAMP NOT NULL,
+    used        TINYINT(1) DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- ------------------------------------------------------------
+-- CRON LOG
+-- ------------------------------------------------------------
+CREATE TABLE cron_log (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    action          VARCHAR(100) NOT NULL,
+    month           VARCHAR(7),
+    records_created INT DEFAULT 0,
+    triggered_by    INT UNSIGNED,
+    started_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (triggered_by) REFERENCES users(id)
+);
+
 SET foreign_key_checks = 1;
