@@ -8,15 +8,19 @@ class AuthController {
 
     public function login(): void {
         $v = Validator::fromRequest();
-        $v->required('email')->required('password');
-        if ($v->fails()) Response::error('Validation failed.', 422, $v->errors());
+        // accept either 'mobile' or 'email' field as the username
+        $login = $v->get('mobile') ?: $v->get('email');
+        $pass  = $v->get('password');
+        if (!$login || !$pass) Response::error('Username and password are required.', 422);
 
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ? AND status = 'active'");
-        $stmt->execute([$v->get('email')]);
+        $stmt = $this->db->prepare(
+            "SELECT * FROM users WHERE (mobile = ? OR email = ?) AND status = 'active'"
+        );
+        $stmt->execute([$login, $login]);
         $user = $stmt->fetch();
 
-        if (!$user || !password_verify($v->get('password'), $user['password_hash'])) {
-            Response::error('Invalid email or password.', 401);
+        if (!$user || !password_verify($pass, $user['password_hash'])) {
+            Response::error('Invalid username or password.', 401);
         }
 
         $this->db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);

@@ -103,9 +103,9 @@ CREATE TABLE users (
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (full_name, cnic, email, password_hash, role) VALUES
-    ('RMC Super Admin', NULL, 'admin@pnwhs-rmc.com',
-     '$2y$12$placeholder_bcrypt_hash_here', 'super_admin');
+INSERT INTO users (full_name, cnic, mobile, email, password_hash, role, status) VALUES
+    ('RMC Super Admin', NULL, 'admin', 'admin@pnwhs-rmc.com',
+     '$2y$12$0eR2O22k2sWk4srYhI0gHugGQD2mm4C3muXjSvh3OOJt86F7fDTe2', 'super_admin', 'active');
 
 -- ------------------------------------------------------------
 -- OWNERS
