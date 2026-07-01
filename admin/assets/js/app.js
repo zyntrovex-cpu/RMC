@@ -4,6 +4,7 @@ const App = {
   user: null,
 
   async init() {
+    this.initSidebar();
     const token = localStorage.getItem('rmc_token');
     if (!token) { this.redirect('login.html'); return; }
 
@@ -39,6 +40,59 @@ const App = {
     document.querySelectorAll('#sidebar nav a, .sidebar-nav .nav-item').forEach(a => {
       a.classList.toggle('active', a.getAttribute('href') === page);
     });
+  },
+
+  // ── Sidebar slide toggle ──────────────────────────────────────
+  initSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    // Wrap each nav link's text in .nav-label for hide/show animation
+    sidebar.querySelectorAll('nav a').forEach(a => {
+      const icon = a.querySelector('.icon');
+      // Collect all text nodes and non-icon children
+      const nodes = Array.from(a.childNodes);
+      const textContent = nodes
+        .filter(n => n !== icon)
+        .map(n => (n.nodeType === Node.TEXT_NODE ? n.textContent : n.outerHTML || ''))
+        .join('').trim();
+      // Remove old text/child nodes except icon
+      nodes.forEach(n => { if (n !== icon) n.parentNode && n.parentNode.removeChild(n); });
+      // Add data-label for tooltip and wrap text
+      const label = textContent.replace(/<[^>]+>/g, '').trim();
+      a.setAttribute('data-label', label);
+      const span = document.createElement('span');
+      span.className = 'nav-label';
+      span.textContent = label;
+      a.appendChild(span);
+    });
+
+    // Inject toggle button into brand area
+    const brand = sidebar.querySelector('.brand');
+    if (brand) {
+      // Wrap existing brand content in .brand-text
+      const brandText = document.createElement('div');
+      brandText.className = 'brand-text';
+      Array.from(brand.childNodes).forEach(n => brandText.appendChild(n));
+      brand.appendChild(brandText);
+
+      const btn = document.createElement('button');
+      btn.id = 'sidebar-toggle';
+      btn.title = 'Toggle sidebar';
+      btn.innerHTML = '&#9776;'; // ☰ hamburger
+      btn.onclick = () => App.toggleSidebar();
+      brand.appendChild(btn);
+    }
+
+    // Restore saved state
+    if (localStorage.getItem('rmc_sidebar') === 'collapsed') {
+      document.body.classList.add('sidebar-collapsed');
+    }
+  },
+
+  toggleSidebar() {
+    const collapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('rmc_sidebar', collapsed ? 'collapsed' : 'open');
   },
 
   logout() {

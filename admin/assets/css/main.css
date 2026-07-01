@@ -41,19 +41,41 @@ a:hover { text-decoration: underline; }
   display: flex;
   flex-direction: column;
   z-index: 100;
-  transition: width 0.2s;
+  overflow: hidden;
+  transition: width 0.25s ease;
 }
 
 #sidebar .brand {
   padding: 18px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  min-height: 64px;
 }
 
+#sidebar .brand-text { flex: 1; overflow: hidden; transition: opacity 0.2s; }
 #sidebar .brand h2 { font-size: 15px; font-weight: 700; }
 #sidebar .brand small { font-size: 11px; opacity: 0.7; }
 
-#sidebar nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+/* Toggle button inside the sidebar brand area */
+#sidebar-toggle {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+#sidebar-toggle:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+#sidebar nav { flex: 1; padding: 12px 0; overflow-y: auto; overflow-x: hidden; }
 
 #sidebar nav a {
   display: flex;
@@ -62,6 +84,7 @@ a:hover { text-decoration: underline; }
   padding: 10px 20px;
   color: rgba(255,255,255,0.8);
   font-size: 13px;
+  white-space: nowrap;
   transition: background 0.15s, color 0.15s;
   border-left: 3px solid transparent;
 }
@@ -74,7 +97,8 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
 }
 
-#sidebar nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+#sidebar nav a .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+#sidebar nav a .nav-label { transition: opacity 0.2s; }
 
 #sidebar nav .nav-group {
   padding: 16px 20px 4px;
@@ -83,6 +107,8 @@ a:hover { text-decoration: underline; }
   color: rgba(255,255,255,0.4);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: opacity 0.2s;
 }
 
 #sidebar .sidebar-footer {
@@ -90,16 +116,53 @@ a:hover { text-decoration: underline; }
   border-top: 1px solid rgba(255,255,255,0.1);
   color: rgba(255,255,255,0.6);
   font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.2s;
 }
+
+/* ── COLLAPSED STATE ── */
+body.sidebar-collapsed #sidebar { width: 56px; }
+
+body.sidebar-collapsed #sidebar .brand-text,
+body.sidebar-collapsed #sidebar nav a .nav-label,
+body.sidebar-collapsed #sidebar nav .nav-group,
+body.sidebar-collapsed #sidebar .sidebar-footer { opacity: 0; pointer-events: none; }
+
+body.sidebar-collapsed #sidebar nav a { padding: 10px 0; justify-content: center; border-left-width: 0; }
+body.sidebar-collapsed #sidebar nav a:hover,
+body.sidebar-collapsed #sidebar nav a.active { border-left-width: 0; }
+body.sidebar-collapsed #sidebar .brand { justify-content: center; padding: 18px 0; }
+
+/* Tooltip on collapsed icons */
+body.sidebar-collapsed #sidebar nav a { position: relative; }
+body.sidebar-collapsed #sidebar nav a::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 60px;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+}
+body.sidebar-collapsed #sidebar nav a:hover::after { opacity: 1; }
 
 /* ── MAIN ── */
 #main {
   margin-left: var(--sidebar-w);
+  transition: margin-left 0.25s ease;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
+body.sidebar-collapsed #main { margin-left: 56px; }
 
 /* ── TOPBAR (#topbar layout) ── */
 #topbar {
