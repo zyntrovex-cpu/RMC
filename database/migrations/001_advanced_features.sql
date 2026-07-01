@@ -141,12 +141,13 @@ CREATE TABLE payment_plans (
 );
 
 CREATE TABLE cron_log (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    job_name    VARCHAR(100) NOT NULL,
-    status      ENUM('success','failed','partial') NOT NULL,
-    details     JSON,
-    duration_ms INT UNSIGNED,
-    ran_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    action          VARCHAR(100) NOT NULL,
+    month           VARCHAR(7),
+    records_created INT DEFAULT 0,
+    triggered_by    INT UNSIGNED,
+    started_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (triggered_by) REFERENCES users(id)
 );
 
 SET foreign_key_checks = 1;
