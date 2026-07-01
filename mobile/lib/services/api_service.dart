@@ -12,7 +12,9 @@ class ApiException implements Exception {
 }
 
 class ApiService extends ChangeNotifier {
-  static const _base = 'https://api.pnwhs-rmc.com/api';
+  // Change this to your PC's local IP address (find with: ipconfig on Windows)
+  // Example: 'http://192.168.1.5/RMC/RMC/backend'
+  static const _base = 'http://192.168.1.100/RMC/RMC/backend';
 
   String? _token;
 
