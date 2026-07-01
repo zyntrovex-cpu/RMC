@@ -1,3 +1,4 @@
 RewriteEngine On
+RewriteBase /RMC/RMC/backend/
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.php [QSA,L]
+RewriteRule ^ index.php [QSA,L]
