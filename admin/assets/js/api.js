@@ -1,5 +1,5 @@
 // ── API Client ──────────────────────────────────────────────
-const API_BASE = window.API_BASE || '/api';
+const API_BASE = window.API_BASE || (window.location.pathname.replace(/\/admin\/.*$/, '/backend'));
 
 const Api = {
   token: () => localStorage.getItem('rmc_token'),
@@ -25,7 +25,7 @@ const Api = {
   delete: (path)        => Api.request('DELETE', path),
 
   // Auth
-  login:          (email, password) => Api.post('/auth?action=login', { email, password }),
+  login:          (mobile, password) => Api.post('/auth?action=login', { mobile, password }),
   me:             ()                => Api.get('/auth?action=me'),
   changePassword: (d)               => Api.post('/auth?action=change-password', d),
 
