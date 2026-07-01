@@ -133,18 +133,23 @@ function renderPagination(containerId, meta, onPage) {
   const el = document.getElementById(containerId);
   if (!el) return;
 
+  // Store callback on window to avoid embedding function source in onclick attrs.
+  // Embedding a function reference via ${onPage} stringifies the whole function
+  // body, which contains double-quoted strings that break attribute parsing.
+  window._pgCb = onPage;
+
   const from = (meta.page - 1) * meta.per_page + 1;
   const to   = Math.min(meta.page * meta.per_page, meta.total);
 
   el.innerHTML = `
     <span>Showing ${from}–${to} of ${meta.total}</span>
     <div class="pages">
-      <button ${meta.page <= 1 ? 'disabled' : ''} onclick="(${onPage})(${meta.page - 1})">&#8249;</button>
+      <button ${meta.page <= 1 ? 'disabled' : ''} onclick="window._pgCb(${meta.page - 1})">&#8249;</button>
       ${Array.from({length: meta.last_page}, (_,i) => i+1)
         .filter(p => Math.abs(p - meta.page) <= 2)
-        .map(p => `<button class="${p === meta.page ? 'active' : ''}" onclick="(${onPage})(${p})">${p}</button>`)
+        .map(p => `<button class="${p === meta.page ? 'active' : ''}" onclick="window._pgCb(${p})">${p}</button>`)
         .join('')}
-      <button ${meta.page >= meta.last_page ? 'disabled' : ''} onclick="(${onPage})(${meta.page + 1})">&#8250;</button>
+      <button ${meta.page >= meta.last_page ? 'disabled' : ''} onclick="window._pgCb(${meta.page + 1})">&#8250;</button>
     </div>
   `;
 }
