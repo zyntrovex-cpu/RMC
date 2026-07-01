@@ -106,7 +106,7 @@
         <td style="color:${c.arrears>0?'var(--danger)':'inherit'}">PKR ${pkr(c.arrears)}</td>
         <td><strong>PKR ${pkr(c.total_amount)}</strong></td>
         <td>${statusBadge(c.status)}</td>
-        <td>${c.status !== 'paid' && c.status !== 'cancelled' ? `<button class="btn btn-success btn-sm" onclick='openPay(${JSON.stringify(c)})'>Pay</button>` : ''}
+        <td>${c.status !== 'paid' && c.status !== 'cancelled' ? '<button class="btn btn-success btn-sm" onclick="openPay(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">Pay</button>' : ''}
           <a href="challan-detail.html?id=${c.id}" class="btn btn-outline btn-sm">View</a></td>
       </tr>`).join('');
       renderPagination('pagination', res.meta, load);
