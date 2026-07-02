@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Required to connect to XAMPP backend -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Allow plain HTTP connections to local XAMPP (not HTTPS) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application

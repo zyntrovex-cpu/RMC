@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace "com.pnwhs.rmc"
-    compileSdk 34
+    compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -15,26 +15,22 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
         applicationId "com.pnwhs.rmc"
         minSdk 23
-        targetSdk 34
+        targetSdk flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName
     }
 
     buildTypes {
         release {
-            // Using debug signing for local APK distribution
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-        }
-        debug {
-            applicationIdSuffix ""
         }
     }
 }
