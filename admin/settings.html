@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings — PNWHS RMC</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<script>window.API_BASE=location.pathname.replace(/\/admin\/.*$/, '/backend');</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <a href="houses.html"><span class="icon">🏡</span> Houses</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html" class="active"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">System Settings</span><div class="topbar-right"><div class="avatar" id="user-avatar">AD</div></div></div>
+  <div id="content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-header"><h3>Organization Info</h3></div>
+        <div class="card-body">
+          <div class="form-group"><label>Organization Name</label><input type="text" id="orgName" value="PNWHS bin Qasim"></div>
+          <div class="form-group"><label>Short Name</label><input type="text" id="orgShort" value="PNWHS RMC"></div>
+          <div class="form-group"><label>Address</label><textarea id="orgAddress" rows="2">RMC Office, bin Qasim Town, Karachi</textarea></div>
+          <div class="form-group"><label>Contact Phone</label><input type="text" id="orgPhone"></div>
+          <div class="form-group"><label>Contact Email</label><input type="email" id="orgEmail"></div>
+          <button class="btn btn-primary" onclick="toast('Organization info saved','success')">Save Organization Info</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Challan Settings</h3></div>
+        <div class="card-body">
+          <div class="form-group"><label>Auto-Generate Day</label><input type="number" id="challanDay" value="1" min="1" max="5"><small style="color:#aaa">Day of month when challans auto-generate via cron</small></div>
+          <div class="form-group"><label>Default Due Days</label><input type="number" id="dueDays" value="15" min="7" max="30"><small style="color:#aaa">Days after generation before challan is overdue</small></div>
+          <div class="form-group"><label>Auto-Blacklist After (months overdue)</label><input type="number" id="blacklistMonths" value="3" min="1" max="12"></div>
+          <div class="form-group"><label>SMS Reminder Days Before Due</label><input type="number" id="smsReminder" value="3" min="1" max="7"></div>
+          <button class="btn btn-primary" onclick="toast('Challan settings saved','success')">Save Challan Settings</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Bank / Payment Details</h3></div>
+        <div class="card-body">
+          <div class="form-group"><label>Bank Name</label><input type="text" id="bankName" value="Habib Bank Limited (HBL)"></div>
+          <div class="form-group"><label>Account Title</label><input type="text" id="bankTitle" value="PNWHS bin Qasim"></div>
+          <div class="form-group"><label>Account Number</label><input type="text" id="bankAccount"></div>
+          <div class="form-group"><label>IBAN</label><input type="text" id="bankIban"></div>
+          <button class="btn btn-primary" onclick="toast('Bank info saved','success')">Save Bank Info</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Change Admin Password</h3></div>
+        <div class="card-body">
+          <div class="form-group"><label>Current Password</label><input type="password" id="oldPwd"></div>
+          <div class="form-group"><label>New Password</label><input type="password" id="newPwd"></div>
+          <div class="form-group"><label>Confirm New Password</label><input type="password" id="newPwd2"></div>
+          <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+        </div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-header"><h3>Cron Job Status</h3></div>
+        <table>
+          <thead><tr><th>Job</th><th>Last Run</th><th>Status</th><th>Message</th><th>Records Processed</th></tr></thead>
+          <tbody id="cronTable"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">Loading…</td></tr></tbody>
+        </table>
+        <div class="card-body" style="padding-top:0">
+          <button class="btn btn-outline" onclick="runCronNow()" style="margin-top:8px">▶ Run Challan Cron Now (manual)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  async function changePassword(){
+    const old=document.getElementById('oldPwd').value;
+    const np=document.getElementById('newPwd').value;
+    const np2=document.getElementById('newPwd2').value;
+    if(np!==np2){toast('Passwords do not match','error');return;}
+    if(np.length<8){toast('Min 8 characters','error');return;}
+    try{
+      await Api.changePassword({old_password:old,new_password:np});
+      toast('Password changed','success');
+      ['oldPwd','newPwd','newPwd2'].forEach(id=>document.getElementById(id).value='');
+    }catch(err){toast(err.message||'Failed.','error');}
+  }
+  async function loadCronLog(){
+    try{
+      const data=await Api.getCronLog();
+      const items=data.data||[];
+      document.getElementById('cronTable').innerHTML=items.length?items.map(c=>`
+        <tr><td>${c.job_name}</td><td>${c.started_at?.substring(0,16)||'Never'}</td>
+        <td><span class="badge ${c.status==='success'?'badge-success':c.status==='running'?'badge-warning':'badge-danger'}">${c.status}</span></td>
+        <td>${c.message||''}</td><td>${c.records_processed||0}</td></tr>`
+      ).join(''):'<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">No cron logs yet</td></tr>';
+    }catch{}
+  }
+  async function runCronNow(){
+    if(!confirm('Run the monthly challan generation cron now?'))return;
+    try{await Api.runCron();toast('Cron triggered','success');setTimeout(loadCronLog,3000);}
+    catch(err){toast(err.message||'Failed.','error');}
+  }
+  loadCronLog();
+</script>
+</body></html>

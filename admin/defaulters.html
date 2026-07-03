@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defaulters — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = location.pathname.replace(/\/admin\/.*$/, '/backend');</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <a href="houses.html"><span class="icon">🏡</span> Houses</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html" class="active"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">Defaulters List</span><div class="topbar-right"><div class="avatar" id="user-avatar">AD</div></div></div>
+  <div id="content">
+    <div class="stats-grid">
+      <div class="stat-card red"><div class="label">Total Defaulters</div><div class="value" id="s-count">—</div></div>
+      <div class="stat-card red"><div class="label">Total Outstanding</div><div class="value" id="s-outstanding">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Properties with Outstanding Dues</h3>
+        <input type="text" id="search" placeholder="Filter by owner / plot…" oninput="filterTable()">
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Sector</th><th>Plot</th><th>Owner</th><th>Mobile</th><th>CNIC</th><th>Unpaid Challans</th><th>Accounts Due</th><th>Oldest Due</th><th>Total Outstanding</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let allRows = [];
+  async function load() {
+    try {
+      const res = await Api.defaulters();
+      allRows = res.data;
+      let total = 0;
+      allRows.forEach(r => total += parseFloat(r.total_outstanding || 0));
+      document.getElementById('s-count').textContent = allRows.length;
+      document.getElementById('s-outstanding').textContent = 'PKR ' + pkr(total);
+      renderTable(allRows);
+    } catch (err) { toast(err.message || 'Failed.', 'error'); }
+  }
+  function renderTable(rows) {
+    document.getElementById('tbody').innerHTML = rows.map((r, i) => `<tr>
+      <td>${i+1}</td><td><strong>S-${r.sector}</strong></td><td>${r.plot_no}</td>
+      <td>${r.owner_name || '—'}</td><td>${r.mobile || '—'}</td><td style="font-size:11px">${r.cnic || '—'}</td>
+      <td style="color:var(--danger);font-weight:700">${r.unpaid_challans}</td>
+      <td style="font-size:12px">${r.accounts_due || '—'}</td>
+      <td style="color:var(--danger)">${fmtDate(r.oldest_overdue)}</td>
+      <td><strong style="color:var(--danger)">PKR ${pkr(r.total_outstanding)}</strong></td>
+    </tr>`).join('');
+  }
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    renderTable(allRows.filter(r => (r.owner_name||'').toLowerCase().includes(q) || r.plot_no.toLowerCase().includes(q) || r.sector.toLowerCase().includes(q)));
+  }
+  load();
+</script>
+</body></html>

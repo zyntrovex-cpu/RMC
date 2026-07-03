@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Houses — PNWHS RMC</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>window.API_BASE = location.pathname.replace(/\/admin\/.*$/, '/backend');</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <a href="houses.html" class="active"><span class="icon">🏡</span> Houses</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar">
+    <span class="page-title">Houses Registry</span>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-modal')">+ Add House</button>
+      <div class="avatar" id="user-avatar">AD</div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="card">
+      <div class="card-header">
+        <h3>All Houses</h3>
+        <div class="filters">
+          <select id="f-category">
+            <option value="">All Categories</option>
+            <option value="A">Category A</option>
+            <option value="B">Category B</option>
+            <option value="C">Category C</option>
+          </select>
+          <select id="f-sector"></select>
+          <select id="f-occupancy">
+            <option value="">All Occupancy</option>
+            <option value="owner_occupied">Owner Occupied</option>
+            <option value="rented">Rented</option>
+            <option value="vacant">Vacant</option>
+          </select>
+          <input type="text" id="f-search" placeholder="House no / owner name…">
+          <button class="btn btn-primary btn-sm" onclick="load(1)">Search</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Sector</th><th>House No.</th><th>Category</th><th>Occupancy</th><th>Owner</th><th>Outstanding</th><th>Action</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add House Modal -->
+<div class="modal-overlay" id="add-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-header"><h3>Add House</h3><button class="modal-close" onclick="closeModal('add-modal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Sector *</label><select id="add-sector"></select></div>
+        <div class="form-group"><label>House No. *</label><input id="add-plot" placeholder="e.g. 42"></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="add-category">
+            <option value="">— Select —</option>
+            <option value="1">A — 240 Sq Yds</option>
+            <option value="2">B — 180 Sq Yds</option>
+            <option value="3">C — 120 Sq Yds</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Occupancy</label>
+          <select id="add-occupancy">
+            <option value="vacant">Vacant</option>
+            <option value="owner_occupied">Owner Occupied</option>
+            <option value="rented">Rented</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: 1/3"><label>Remarks</label><textarea id="add-remarks" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAdd()">Save House</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let sectors = [];
+
+  async function initFilters() {
+    const res = await Api.sectors();
+    sectors = res.data;
+    const opts = '<option value="">All Sectors</option>' + sectors.map(s => `<option value="${s.id}">Sector ${s.code}</option>`).join('');
+    document.getElementById('f-sector').innerHTML = opts;
+    const addOpts = '<option value="">— Select —</option>' + sectors.map(s => `<option value="${s.id}">Sector ${s.code}</option>`).join('');
+    document.getElementById('add-sector').innerHTML = addOpts;
+  }
+  initFilters();
+
+  async function load(page = 1) {
+    const params = {
+      page,
+      per_page: 25,
+      property_type: 'residential',
+      sector_id: document.getElementById('f-sector').value,
+      occupancy: document.getElementById('f-occupancy').value,
+      search: document.getElementById('f-search').value
+    };
+
+    // Filter by category using property_categories mapping
+    const categorySelect = document.getElementById('f-category').value;
+    const categoryMap = { 'A': '1', 'B': '2', 'C': '3' };
+    if (categorySelect && categoryMap[categorySelect]) {
+      params.category_id = categoryMap[categorySelect];
+    }
+
+    try {
+      const res = await Api.properties(params);
+      document.getElementById('tbody').innerHTML = res.data.map(p => {
+        const outstanding = (p.outstanding_dues || []).reduce((sum, d) => sum + parseFloat(d.outstanding || 0), 0);
+        const categoryLabel = p.category_code || '—';
+        return `<tr>
+          <td><strong>S-${p.sector_code}</strong></td>
+          <td><strong>${p.plot_no}</strong></td>
+          <td><span class="badge badge-info">${categoryLabel}</span></td>
+          <td>${statusBadge(p.occupancy === 'owner_occupied' ? 'active' : p.occupancy)}</td>
+          <td>${p.owner_name || '<em style="color:#aaa">None</em>'}</td>
+          <td style="color:${outstanding > 0 ? 'var(--danger)' : 'var(--success)'}">${outstanding > 0 ? 'PKR ' + pkr(outstanding) : 'Clear'}</td>
+          <td><a href="property-detail.html?id=${p.id}" class="btn btn-outline btn-sm">View</a></td>
+        </tr>`;
+      }).join('');
+      renderPagination('pagination', res.meta, load);
+    } catch (err) { toast(err.message || 'Failed to load.', 'error'); }
+  }
+
+  async function submitAdd() {
+    const sectorId = document.getElementById('add-sector').value;
+    const houseNo = document.getElementById('add-plot').value;
+    const categoryId = document.getElementById('add-category').value;
+    const occupancy = document.getElementById('add-occupancy').value;
+    const remarks = document.getElementById('add-remarks').value;
+
+    if (!sectorId || !houseNo || !categoryId) {
+      toast('Please fill in all required fields.', 'error');
+      return;
+    }
+
+    try {
+      await Api.createProperty({
+        sector_id: sectorId,
+        plot_no: houseNo,
+        category_id: categoryId,
+        property_type: 'residential',
+        occupancy: occupancy,
+        facility_type: 'none',
+        remarks: remarks
+      });
+      toast('House added successfully.', 'success');
+      closeModal('add-modal');
+      load();
+    } catch (err) { toast(err.message || 'Failed to add house.', 'error'); }
+  }
+
+  load();
+</script>
+</body></html>

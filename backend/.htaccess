@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /RMC/RMC/backend/
+
+# Pass Authorization header to PHP (XAMPP strips it by default)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fee Accounts — PNWHS RMC</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<script>window.API_BASE=location.pathname.replace(/\/admin\/.*$/, '/backend');</script>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand"><h2>PNWHS RMC</h2><small>Society Management System</small></div>
+  <nav>
+    <div class="nav-group">Overview</div><a href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <div class="nav-group">Registry</div>
+    <a href="properties.html"><span class="icon">🏠</span> Properties</a>
+    <a href="houses.html"><span class="icon">🏡</span> Houses</a>
+    <div class="nav-group">Finance</div>
+    <a href="accounts.html" class="active"><span class="icon">💳</span> Accounts</a>
+    <a href="challans.html"><span class="icon">🧾</span> Challans</a>
+    <a href="payments.html"><span class="icon">💰</span> Payments</a>
+    <a href="defaulters.html"><span class="icon">⚠️</span> Defaulters</a>
+    <div class="nav-group">Community</div>
+    <a href="complaints.html"><span class="icon">🔧</span> Complaints</a>
+    <a href="announcements.html"><span class="icon">📢</span> Announcements</a>
+    <a href="noc.html"><span class="icon">📄</span> NOC Requests</a>
+    <div class="nav-group">Reports</div><a href="reports.html"><span class="icon">📈</span> All Reports</a>
+    <div class="nav-group">System</div>
+    <a href="users.html"><span class="icon">👥</span> Users & Staff</a>
+    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer"><span id="user-name">Admin</span><br>
+    <a href="#" onclick="App.logout()" style="color:rgba(255,255,255,0.5);font-size:11px;">Sign out</a></div>
+</div>
+<div id="main">
+  <div id="topbar"><span class="page-title">Fee Accounts</span>
+    <div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Fee Account</button><div class="avatar" id="user-avatar">AD</div></div>
+  </div>
+  <div id="content">
+    <div class="card">
+      <div class="card-header"><h3>Fee Accounts — Each generates a separate monthly challan</h3></div>
+      <table>
+        <thead><tr><th>Account Name</th><th>Code</th><th>Monthly Amount (PKR)</th><th>Due Day</th><th>Applicable To</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="accountTable"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Rate Change History</h3></div>
+      <table>
+        <thead><tr><th>Account</th><th>Old Rate</th><th>New Rate</th><th>Changed By</th><th>Date</th><th>Reason</th></tr></thead>
+        <tbody id="historyTable"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="accountModal" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3 id="aModalTitle">Add Fee Account</h3><button class="modal-close" onclick="closeModal('accountModal')">&#x2715;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="aId">
+      <div class="form-group"><label>Account Name *</label><input type="text" id="aName" placeholder="e.g. Water Supply"></div>
+      <div class="form-group"><label>Short Code *</label><input type="text" id="aCode" placeholder="e.g. WATER" style="text-transform:uppercase" maxlength="10"></div>
+      <div class="form-group"><label>Monthly Amount (PKR) *</label><input type="number" id="aAmount" min="0"></div>
+      <div class="form-group"><label>Due Day of Month</label><input type="number" id="aDueDay" min="1" max="31" value="15"></div>
+      <div class="form-group"><label>Applicable To</label>
+        <select id="aApplicable"><option value="all">All Properties</option><option value="residential">Residential Only</option><option value="commercial">Commercial Only</option></select>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="aDesc" rows="2"></textarea></div>
+      <div class="form-group" id="rateReasonGroup" style="display:none"><label>Reason for Rate Change *</label><input type="text" id="aRateReason" placeholder="e.g. Annual revision"></div>
+      <div class="form-group"><label>Status</label><select id="aStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('accountModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+  let editingId=null,originalAmount=null;
+  async function load(){
+    try{
+      const data=await Api.getAccounts();
+      const items=data.data||[];
+      document.getElementById('accountTable').innerHTML=items.length?items.map(a=>`
+        <tr>
+          <td><strong>${a.name}</strong><br><small style="color:#aaa">${a.description||''}</small></td>
+          <td><code>${a.code}</code></td>
+          <td><strong>PKR ${Number(a.monthly_amount).toLocaleString()}</strong></td>
+          <td>${a.due_day||15}</td><td>${a.applicable_to||'all'}</td>
+          <td><span class="badge ${a.status==='active'?'badge-success':'badge-secondary'}">${a.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick='editAccount(${JSON.stringify(a).replace(/'/g,"&#39;")})'>Edit</button>
+            <button class="btn btn-sm btn-outline ${a.status==='active'?'btn-danger':''}" onclick="toggleAccount(${a.id},'${a.status}')">${a.status==='active'?'Disable':'Enable'}</button>
+          </td>
+        </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No fee accounts found</td></tr>';
+    }catch(err){toast(err.message||'Failed.','error');}
+  }
+  async function loadHistory(){
+    try{
+      const data=await Api.getAccountRateHistory();
+      const items=data.data||[];
+      document.getElementById('historyTable').innerHTML=items.length?items.map(h=>`
+        <tr><td>${h.account_name}</td><td>PKR ${Number(h.old_amount).toLocaleString()}</td><td>PKR ${Number(h.new_amount).toLocaleString()}</td><td>${h.changed_by_name||'—'}</td><td>${h.changed_at?.substring(0,10)||''}</td><td>${h.reason||''}</td></tr>`
+      ).join(''):'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">No rate changes yet</td></tr>';
+    }catch{}
+  }
+  function openAddModal(){
+    editingId=null;originalAmount=null;
+    document.getElementById('aModalTitle').textContent='Add Fee Account';
+    ['aName','aCode','aDesc','aRateReason'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('aAmount').value='';
+    document.getElementById('aDueDay').value='15';
+    document.getElementById('aApplicable').value='all';
+    document.getElementById('aStatus').value='active';
+    document.getElementById('rateReasonGroup').style.display='none';
+    openModal('accountModal');
+  }
+  function editAccount(a){
+    editingId=a.id;originalAmount=a.monthly_amount;
+    document.getElementById('aModalTitle').textContent='Edit Fee Account';
+    document.getElementById('aName').value=a.name||'';
+    document.getElementById('aCode').value=a.code||'';
+    document.getElementById('aAmount').value=a.monthly_amount||'';
+    document.getElementById('aDueDay').value=a.due_day||15;
+    document.getElementById('aApplicable').value=a.applicable_to||'all';
+    document.getElementById('aDesc').value=a.description||'';
+    document.getElementById('aStatus').value=a.status||'active';
+    document.getElementById('aRateReason').value='';
+    document.getElementById('rateReasonGroup').style.display='none';
+    document.getElementById('aAmount').oninput=()=>{
+      document.getElementById('rateReasonGroup').style.display=document.getElementById('aAmount').value!=originalAmount?'':'none';
+    };
+    openModal('accountModal');
+  }
+  async function saveAccount(){
+    const body={name:document.getElementById('aName').value.trim(),code:document.getElementById('aCode').value.trim().toUpperCase(),monthly_amount:document.getElementById('aAmount').value,due_day:document.getElementById('aDueDay').value,applicable_to:document.getElementById('aApplicable').value,description:document.getElementById('aDesc').value.trim(),status:document.getElementById('aStatus').value};
+    if(editingId&&document.getElementById('aAmount').value!=originalAmount){
+      body.rate_change_reason=document.getElementById('aRateReason').value.trim();
+      if(!body.rate_change_reason){toast('Rate change reason is required','error');return;}
+    }
+    try{
+      editingId?await Api.updateAccount(editingId,body):await Api.createAccount(body);
+      closeModal('accountModal');toast('Account saved','success');load();loadHistory();
+    }catch(err){toast(err.message||'Failed.','error');}
+  }
+  async function toggleAccount(id,status){
+    try{await Api.updateAccount(id,{status:status==='active'?'inactive':'active'});toast('Account updated','success');load();}
+    catch(err){toast(err.message||'Failed.','error');}
+  }
+  load();loadHistory();
+</script>
+</body></html>
