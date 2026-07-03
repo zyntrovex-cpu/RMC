@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:convert';
 
 class AuthService extends ChangeNotifier {
-  static const _storage = FlutterSecureStorage();
+  static final _storage = <String, String>{};
 
   String? _token;
   Map<String, dynamic>? _user;
@@ -15,11 +13,11 @@ class AuthService extends ChangeNotifier {
   bool   get isLoggedIn => _token != null;
 
   Future<void> init() async {
-    _token    = await _storage.read(key: 'token');
-    final u   = await _storage.read(key: 'user');
-    final p   = await _storage.read(key: 'property');
-    if (u != null) _user     = jsonDecode(u);
-    if (p != null) _property = jsonDecode(p);
+    _token    = _storage['token'];
+    final u   = _storage['user'];
+    final p   = _storage['property'];
+    if (u != null) _user     = Map<String, dynamic>.from(u as Map);
+    if (p != null) _property = Map<String, dynamic>.from(p as Map);
     notifyListeners();
   }
 
@@ -28,22 +26,22 @@ class AuthService extends ChangeNotifier {
     _token    = token;
     _user     = user;
     _property = property;
-    await _storage.write(key: 'token',    value: token);
-    await _storage.write(key: 'user',     value: jsonEncode(user));
+    _storage['token']    = token;
+    _storage['user']     = user.toString();
     if (property != null)
-      await _storage.write(key: 'property', value: jsonEncode(property));
+      _storage['property'] = property.toString();
     notifyListeners();
   }
 
   Future<void> logout() async {
     _token = null; _user = null; _property = null;
-    await _storage.deleteAll();
+    _storage.clear();
     notifyListeners();
   }
 
   Future<void> updateProperty(Map<String, dynamic> property) async {
     _property = property;
-    await _storage.write(key: 'property', value: jsonEncode(property));
+    _storage['property'] = property.toString();
     notifyListeners();
   }
 }
