@@ -1,0 +1,82 @@
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.packages
+mobile/.pub-cache/
+mobile/*.iml
+mobile/*.lock
+mobile/pubspec.lock
+
+# Android
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/android/local.properties
+mobile/android/gradlew.bat
+mobile/android/gradle/wrapper/gradle-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+
+# Android Studio
+.idea/
+.android/
+*.apk
+*.jks
+*.keystore
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.sublime-*
+*.sublime-*
+*.code-workspace
+
+# PHP
+backend/vendor/
+backend/.env
+backend/.env.local
+backend/composer.lock
+
+# Database
+*.sql.bak
+*.sql.backup
+database/*.sql.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+temp/
+
+# Build artifacts
+dist/
+out/
+target/
+
+# Node (if used)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python (if used)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/

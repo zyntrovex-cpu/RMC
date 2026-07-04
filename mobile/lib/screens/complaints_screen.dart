@@ -11,7 +11,7 @@ class ComplaintsScreen extends StatefulWidget {
 }
 
 class _ComplaintsScreenState extends State<ComplaintsScreen> {
-  late Future<List<dynamic>> _complaintsFuture;
+  late Future<Map<String, dynamic>> _complaintsFuture;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -40,7 +40,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         onPressed: () => _showCreateDialog(context),
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: _complaintsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -57,7 +57,10 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
             );
           }
 
-          final complaints = snapshot.data ?? [];
+          final response = snapshot.data ?? {};
+          final complaints = (response['success'] == true && response['data'] != null)
+              ? (response['data'] is List ? response['data'] as List : [response['data']])
+              : [];
 
           if (complaints.isEmpty) {
             return Center(

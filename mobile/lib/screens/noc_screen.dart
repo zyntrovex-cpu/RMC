@@ -11,7 +11,7 @@ class NocScreen extends StatefulWidget {
 }
 
 class _NocScreenState extends State<NocScreen> {
-  late Future<List<dynamic>> _nocsFuture;
+  late Future<Map<String, dynamic>> _nocsFuture;
   final _purposeController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -40,7 +40,7 @@ class _NocScreenState extends State<NocScreen> {
         onPressed: () => _showCreateDialog(context),
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: _nocsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -57,7 +57,10 @@ class _NocScreenState extends State<NocScreen> {
             );
           }
 
-          final nocs = snapshot.data ?? [];
+          final response = snapshot.data ?? {};
+          final nocs = (response['success'] == true && response['data'] != null)
+              ? (response['data'] is List ? response['data'] as List : [response['data']])
+              : [];
 
           if (nocs.isEmpty) {
             return Center(

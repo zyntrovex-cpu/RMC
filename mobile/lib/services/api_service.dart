@@ -39,12 +39,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Login failed: ${response.statusCode}'};
+        return {'success': false, 'message': 'Login failed: ${response.statusCode}'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 
@@ -56,12 +57,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Failed to load dashboard'};
+        return {'success': false, 'message': 'Failed to load dashboard'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 
@@ -73,16 +75,17 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Failed to load profile'};
+        return {'success': false, 'message': 'Failed to load profile'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 
-  Future<List<dynamic>> getChallans() async {
+  Future<Map<String, dynamic>> getChallans() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/resident?action=my-challans'),
@@ -90,17 +93,17 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data is List ? data : [data];
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response', 'data': []};
       } else {
-        return [];
+        return {'success': false, 'message': 'Failed to load challans', 'data': []};
       }
     } catch (e) {
-      return [];
+      return {'success': false, 'message': 'Connection error: $e', 'data': []};
     }
   }
 
-  Future<List<dynamic>> getVisitorPasses() async {
+  Future<Map<String, dynamic>> getVisitorPasses() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/resident?action=my-visitor-passes'),
@@ -108,13 +111,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data is List ? data : [data];
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response', 'data': []};
       } else {
-        return [];
+        return {'success': false, 'message': 'Failed to load visitor passes', 'data': []};
       }
     } catch (e) {
-      return [];
+      return {'success': false, 'message': 'Connection error: $e', 'data': []};
     }
   }
 
@@ -127,16 +130,17 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Failed to create visitor pass'};
+        return {'success': false, 'message': 'Failed to create visitor pass'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 
-  Future<List<dynamic>> getComplaints() async {
+  Future<Map<String, dynamic>> getComplaints() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/resident?action=my-complaints'),
@@ -144,13 +148,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data is List ? data : [data];
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response', 'data': []};
       } else {
-        return [];
+        return {'success': false, 'message': 'Failed to load complaints', 'data': []};
       }
     } catch (e) {
-      return [];
+      return {'success': false, 'message': 'Connection error: $e', 'data': []};
     }
   }
 
@@ -163,16 +167,17 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Failed to submit complaint'};
+        return {'success': false, 'message': 'Failed to submit complaint'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 
-  Future<List<dynamic>> getNocs() async {
+  Future<Map<String, dynamic>> getNocs() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/resident?action=my-noc-requests'),
@@ -180,13 +185,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data is List ? data : [data];
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response', 'data': []};
       } else {
-        return [];
+        return {'success': false, 'message': 'Failed to load NOC requests', 'data': []};
       }
     } catch (e) {
-      return [];
+      return {'success': false, 'message': 'Connection error: $e', 'data': []};
     }
   }
 
@@ -199,12 +204,13 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        return decoded ?? {'success': false, 'message': 'Invalid response'};
       } else {
-        return {'message': 'Failed to request NOC'};
+        return {'success': false, 'message': 'Failed to request NOC'};
       }
     } catch (e) {
-      return {'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Connection error: $e'};
     }
   }
 }

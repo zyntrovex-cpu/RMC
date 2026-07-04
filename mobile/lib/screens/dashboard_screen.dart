@@ -57,7 +57,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           }
 
-          final data = snapshot.data ?? {};
+          final response = snapshot.data ?? {};
+          final data = (response['success'] == true && response['data'] != null)
+              ? response['data'] as Map<String, dynamic>
+              : {};
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),

@@ -27,7 +27,6 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName
-        usesCleartextTraffic true
     }
 
     buildTypes {

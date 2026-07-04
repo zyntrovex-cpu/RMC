@@ -11,7 +11,7 @@ class ChallansScreen extends StatefulWidget {
 }
 
 class _ChallansScreenState extends State<ChallansScreen> {
-  late Future<List<dynamic>> _challansFuture;
+  late Future<Map<String, dynamic>> _challansFuture;
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _ChallansScreenState extends State<ChallansScreen> {
       appBar: AppBar(
         title: Text(localization.t('challans')),
       ),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: _challansFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -44,7 +44,10 @@ class _ChallansScreenState extends State<ChallansScreen> {
             );
           }
 
-          final challans = snapshot.data ?? [];
+          final response = snapshot.data ?? {};
+          final challans = (response['success'] == true && response['data'] != null)
+              ? (response['data'] is List ? response['data'] as List : [response['data']])
+              : [];
 
           if (challans.isEmpty) {
             return Center(

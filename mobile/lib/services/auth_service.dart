@@ -29,8 +29,8 @@ class AuthService extends ChangeNotifier {
 
       final response = await ApiService.instance.login(mobile, password);
 
-      if (response.containsKey('token')) {
-        userToken = response['token'];
+      if (response['success'] == true && response['data'] != null && response['data']['token'] != null) {
+        userToken = response['data']['token'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('userToken', userToken!);
 

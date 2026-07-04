@@ -11,7 +11,7 @@ class VisitorPassesScreen extends StatefulWidget {
 }
 
 class _VisitorPassesScreenState extends State<VisitorPassesScreen> {
-  late Future<List<dynamic>> _passesFuture;
+  late Future<Map<String, dynamic>> _passesFuture;
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _purposeController = TextEditingController();
@@ -41,7 +41,7 @@ class _VisitorPassesScreenState extends State<VisitorPassesScreen> {
         onPressed: () => _showCreateDialog(context),
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: _passesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -58,7 +58,10 @@ class _VisitorPassesScreenState extends State<VisitorPassesScreen> {
             );
           }
 
-          final passes = snapshot.data ?? [];
+          final response = snapshot.data ?? {};
+          final passes = (response['success'] == true && response['data'] != null)
+              ? (response['data'] is List ? response['data'] as List : [response['data']])
+              : [];
 
           if (passes.isEmpty) {
             return Center(
